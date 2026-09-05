@@ -1,16 +1,15 @@
 package com.sorokaandriy.event_service.controller;
 
 import com.sorokaandriy.event_service.dto.requests.ConfirmSeatsRequest;
-import com.sorokaandriy.event_service.dto.responses.HeldSeatInfo;
 import com.sorokaandriy.event_service.dto.requests.HeldSeatRequest;
 import com.sorokaandriy.event_service.dto.requests.ReleaseSeatsRequest;
+import com.sorokaandriy.event_service.dto.responses.HeldSeatsResponse;
 import com.sorokaandriy.event_service.service.EventSeatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,7 +20,7 @@ public class InternalEventController {
     private final EventSeatService service;
 
     @PostMapping("/{eventId}/hold-seats")
-    public ResponseEntity<List<HeldSeatInfo>> holdSeats(
+    public ResponseEntity<HeldSeatsResponse> holdSeats(
             @PathVariable UUID eventId,
             @Valid @RequestBody HeldSeatRequest request
     ){
