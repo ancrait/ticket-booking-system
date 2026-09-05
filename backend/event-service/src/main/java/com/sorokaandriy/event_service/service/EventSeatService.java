@@ -5,8 +5,11 @@ import com.sorokaandriy.event_service.dto.requests.HeldSeatRequest;
 import com.sorokaandriy.event_service.dto.requests.ReleaseSeatsRequest;
 import com.sorokaandriy.event_service.dto.responses.EventSeatResponse;
 import com.sorokaandriy.event_service.dto.responses.HeldSeatInfo;
+import com.sorokaandriy.event_service.dto.responses.HeldSeatsResponse;
+import com.sorokaandriy.event_service.entity.Event;
 import com.sorokaandriy.event_service.entity.EventSeat;
 import com.sorokaandriy.event_service.entity.enumeration.EventSeatStatus;
+import com.sorokaandriy.event_service.exception.EventNotFoundException;
 import com.sorokaandriy.event_service.exception.SeatsNotAvailableException;
 import com.sorokaandriy.event_service.repository.EventRepository;
 import com.sorokaandriy.event_service.repository.EventSeatRepository;
@@ -53,7 +56,10 @@ public class EventSeatService {
 
 
     @Transactional
-    public List<HeldSeatInfo> holdSeats(UUID eventId, HeldSeatRequest request) {
+    public HeldSeatsResponse holdSeats(UUID eventId, HeldSeatRequest request) {
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException("Event with id " + eventId + " not found"));
 
         List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndSeatIdInAndStatus
                 (eventId, request.seatIds(), EventSeatStatus.FREE);
@@ -64,8 +70,13 @@ public class EventSeatService {
 
         eventSeats.forEach(seat -> seat.setStatus(EventSeatStatus.HELD));
 
-        return eventSeats.stream().
+        List<HeldSeatInfo> heldSeatInfos = eventSeats.stream().
                 map(eventSeat -> mapper.fromEventSeatToHeldSeatInfo(eventSeat)).toList();
+
+        return HeldSeatsResponse.builder()
+                .eventTitle(event.getTitle())
+                .seats(heldSeatInfos)
+                .build();
     }
 
 

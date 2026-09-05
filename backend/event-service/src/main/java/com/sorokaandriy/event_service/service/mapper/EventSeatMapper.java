@@ -23,7 +23,10 @@ public class EventSeatMapper {
     public HeldSeatInfo fromEventSeatToHeldSeatInfo(EventSeat eventSeat){
 
         return HeldSeatInfo.builder()
-                .seatId(eventSeat.getId())
+                .eventSeatId(eventSeat.getId())
+                .rowNumber(eventSeat.getSeat().getRowNumber())
+                .seatNumber(eventSeat.getSeat().getSeatNumber())
+                .sector(eventSeat.getSeat().getSector())
                 .price(eventSeat.getPrice())
                 .build();
     }

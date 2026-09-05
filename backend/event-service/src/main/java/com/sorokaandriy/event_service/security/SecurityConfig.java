@@ -19,12 +19,12 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final HeaderAuthenticationFilter headerAuthenticationFilter;
     private final String frontendUrl;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+    public SecurityConfig(HeaderAuthenticationFilter headerAuthenticationFilter,
                           @Value("${app.frontend-url}") String frontendUrl) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.headerAuthenticationFilter = headerAuthenticationFilter;
         this.frontendUrl = frontendUrl;
     }
 
@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/internal/events/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
