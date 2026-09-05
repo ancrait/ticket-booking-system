@@ -1,4 +1,4 @@
-package com.sorokaandriy.event_service.dto.responses;
+package com.sorokaandriy.booking_service.dto.responses;
 
 import lombok.Builder;
 
