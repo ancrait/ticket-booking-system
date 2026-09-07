@@ -32,6 +32,8 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
+    @Version
+    private Long version;
     @Column(name = "provider_payment_id")
     private String providerPaymentId;
     @Builder.Default
