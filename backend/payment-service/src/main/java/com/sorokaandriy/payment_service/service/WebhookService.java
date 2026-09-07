@@ -6,6 +6,7 @@ import com.sorokaandriy.payment_service.dto.events.PaymentSuccessEvent;
 import com.sorokaandriy.payment_service.entity.OutBox;
 import com.sorokaandriy.payment_service.entity.Payment;
 import com.sorokaandriy.payment_service.entity.enumeration.PaymentStatus;
+import com.sorokaandriy.payment_service.exception.InvalidWebhookSignatureException;
 import com.sorokaandriy.payment_service.exception.PaymentNotFoundException;
 import com.sorokaandriy.payment_service.exception.PaymentProcessingException;
 import com.sorokaandriy.payment_service.repository.OutBoxRepository;
@@ -56,7 +57,7 @@ public class WebhookService {
 
         }catch (SignatureVerificationException ex){
             log.error("Invalid Stripe webhook signature", ex);
-            throw new RuntimeException("Invalid signature", ex);
+            throw new InvalidWebhookSignatureException("Invalid signature", ex);
         }
     }
 
