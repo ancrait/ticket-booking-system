@@ -13,6 +13,7 @@ public record UserResponse(
         String email,
         String phone,
         Role role,
+        Boolean emailVerified,
         Instant createdAt
 ) {
 }

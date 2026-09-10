@@ -84,6 +84,7 @@ public class BookingMapper {
         return BookingCanceledEvent.builder()
                 .bookingId(booking.getId())
                 .userId(userId)
+                .email(booking.getEmail())
                 .eventId(booking.getEventId())
                 .reason("Booking canceled")
                 .build();
@@ -94,6 +95,7 @@ public class BookingMapper {
         return BookingExpiredEvent.builder()
                 .bookingId(booking.getId())
                 .userId(booking.getUserId())
+                .email(booking.getEmail())
                 .eventId(booking.getEventId())
                 .reason("booking-expired")
                 .build();

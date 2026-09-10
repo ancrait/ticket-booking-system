@@ -8,6 +8,7 @@ import java.util.UUID;
 public record BookingCanceledEvent(
         UUID bookingId,
         UUID userId,
+        String email,
         UUID eventId,
         String reason
 ) {
