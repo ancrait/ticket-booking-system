@@ -9,6 +9,7 @@ import java.util.UUID;
 public record PaymentFailedEvent(
         UUID bookingId,
         UUID userId,
+        String email,
         UUID paymentId,
         String reason,
         Instant failedAt

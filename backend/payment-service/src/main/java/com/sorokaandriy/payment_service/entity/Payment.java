@@ -27,6 +27,8 @@ public class Payment {
     private UUID bookingId;
     @Column(name = "user_id")
     private UUID userId;
+    @Column(name = "email")
+    private String email;
     @Column(nullable = false)
     private BigDecimal amount;
     @Enumerated(EnumType.STRING)

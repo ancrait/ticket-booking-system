@@ -10,6 +10,7 @@ import java.util.UUID;
 public record PaymentSuccessEvent(
         UUID bookingId,
         UUID userId,
+        String email,
         String paymentId,
         BigDecimal amount,
         Instant paidAt

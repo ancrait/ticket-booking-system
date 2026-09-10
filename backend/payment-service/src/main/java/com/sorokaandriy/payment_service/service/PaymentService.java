@@ -65,28 +65,28 @@ public class PaymentService {
 
 
     @Transactional
-    public void cancelPayment(BookingCanceledEvent event) {
+    public void cancelPayment(UUID bookingId) {
 
-        Payment payment = repository.getPaymentByBookingId(event.bookingId())
+        Payment payment = repository.getPaymentByBookingId(bookingId)
                 .orElseThrow(() -> new PaymentNotFoundException("Payment with bookingId " +
-                        event.bookingId() + " does not exist"));
+                        bookingId + " does not exist"));
 
         if (payment.getStatus() == PaymentStatus.CANCELED ||
             payment.getStatus() == PaymentStatus.REFUNDED ||
             payment.getStatus() == PaymentStatus.FAILED) {
             log.info("Payment for booking {} already finalized with status {}",
-                    event.bookingId(), payment.getStatus());
+                    bookingId, payment.getStatus());
             return;
         }
 
         if (payment.getStatus() == PaymentStatus.PENDING) {
             payment.setStatus(PaymentStatus.CANCELED);
-            log.info("Payment for booking {} canceled", event.bookingId());
+            log.info("Payment for booking {} canceled", bookingId);
 
         } else if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
             stripeService.refundPayment(payment.getProviderPaymentId());
             payment.setStatus(PaymentStatus.REFUNDED);
-            log.info("Payment for booking {} refunded", event.bookingId());
+            log.info("Payment for booking {} refunded", bookingId);
         }
 
         payment.setUpdatedAt(Instant.now());
