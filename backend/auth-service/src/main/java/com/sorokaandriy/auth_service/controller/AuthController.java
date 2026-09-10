@@ -40,6 +40,14 @@ public class AuthController {
         return ResponseEntity.ok(service.refresh(request));
     }
 
+    @GetMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(
+            @RequestParam("token") String token
+    ) {
+        service.verifyEmail(token);
+        return ResponseEntity.noContent().build();
+    }
+
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> currentUser(

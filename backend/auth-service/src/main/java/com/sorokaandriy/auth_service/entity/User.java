@@ -33,6 +33,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
     @Builder.Default
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+    @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
     @Column(name = "updated_at")

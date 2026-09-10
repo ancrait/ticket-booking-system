@@ -73,6 +73,30 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ErrorResponseDto> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                ErrorResponseDto.builder()
+                        .status(HttpStatus.FORBIDDEN.value())
+                        .error("Forbidden")
+                        .message(ex.getMessage())
+                        .timestamp(Instant.now())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler({InvalidVerificationTokenException.class, VerificationTokenExpiredException.class})
+    public ResponseEntity<ErrorResponseDto> handleVerificationTokenExceptions(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ErrorResponseDto.builder()
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .error("Bad Request")
+                        .message(ex.getMessage())
+                        .timestamp(Instant.now())
+                        .build()
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleAllExceptions(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(

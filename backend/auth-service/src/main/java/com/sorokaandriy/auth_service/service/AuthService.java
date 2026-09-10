@@ -1,26 +1,30 @@
 package com.sorokaandriy.auth_service.service;
 
 import com.sorokaandriy.auth_service.dto.*;
+import com.sorokaandriy.auth_service.entity.EmailVerificationToken;
+import com.sorokaandriy.auth_service.entity.OutBox;
 import com.sorokaandriy.auth_service.entity.User;
-import com.sorokaandriy.auth_service.exception.EmailAlreadyExistsException;
-import com.sorokaandriy.auth_service.exception.InvalidCredentialsException;
-import com.sorokaandriy.auth_service.exception.InvalidTokenException;
-import com.sorokaandriy.auth_service.exception.UserNotFoundException;
-import com.sorokaandriy.auth_service.kafka.UserEventProducer;
+import com.sorokaandriy.auth_service.exception.*;
 import com.sorokaandriy.auth_service.kafka.UserRegisteredEvent;
+import com.sorokaandriy.auth_service.repository.EmailVerificationTokenRepository;
+import com.sorokaandriy.auth_service.repository.OutBoxRepository;
 import com.sorokaandriy.auth_service.repository.UserRepository;
 import com.sorokaandriy.auth_service.security.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -29,31 +33,47 @@ import java.util.UUID;
 public class AuthService {
 
     private final UserRepository repository;
+    private final EmailVerificationTokenRepository tokenRepository;
     private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final UserEventProducer eventProducer;
+    private final OutBoxRepository outBoxRepository;
+    private final ObjectMapper objectMapper;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
+    @Value("${app.verification-token-expiration}")
+    private long verificationTokenExpiration;
+
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (repository.existsByEmail(request.email().toLowerCase())) {
             throw new EmailAlreadyExistsException("User with email " + request.email() + " already exists");
         }
 
         User user = mapper.fromRegisterRequestToUser(request, passwordEncoder.encode(request.password()));
+        user.setEmailVerified(false);
         User saved = repository.save(user);
 
-        eventProducer.sendUserRegisteredEvent(UserRegisteredEvent.builder()
-                .userId(saved.getId().toString())
-                .email(saved.getEmail())
-                .firstName(saved.getFirstName())
-                .lastName(saved.getLastName())
-                .registeredAt(saved.getCreatedAt())
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .token(token)
+                .userId(saved.getId())
+                .expiresAt(Instant.now().plusMillis(verificationTokenExpiration))
+                .build();
+        tokenRepository.save(verificationToken);
+
+        UserRegisteredEvent registeredEvent = mapper.fromUserToUserRegisteredEvent(user, verificationToken.getToken());
+
+        outBoxRepository.save(OutBox.builder()
+                .aggregateId(String.valueOf(saved.getId()))
+                .topic("user-registered-topic")
+                .payload(serialize(registeredEvent))
                 .build());
 
         return buildAuthResponse(saved);
-
     }
-
 
     public AuthResponse login(LoginRequest request) {
         User user = repository.findByEmail(request.email().toLowerCase())
@@ -63,9 +83,14 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        return buildAuthResponse(user);
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new EmailNotVerifiedException("Email is not verified. Please check your inbox.");
+        }
 
+        return buildAuthResponse(user);
     }
+
+
 
     public AuthResponse refresh(RefreshRequest request) {
         Claims claims;
@@ -82,9 +107,33 @@ public class AuthService {
         User user = repository.findById(UUID.fromString(claims.getSubject()))
                 .orElseThrow(() -> new UserNotFoundException("User with id " + claims.getSubject() + " not found"));
 
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new EmailNotVerifiedException("Email is not verified. Please check your inbox.");
+        }
+
         return buildAuthResponse(user);
     }
 
+
+
+    @Transactional
+    public void verifyEmail(String token) {
+        EmailVerificationToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidVerificationTokenException("Invalid verification token"));
+
+        if (verificationToken.getExpiresAt().isBefore(Instant.now())) {
+            throw new VerificationTokenExpiredException("Verification token has expired");
+        }
+
+        User user = repository.findById(verificationToken.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setEmailVerified(true);
+        repository.save(user);
+        tokenRepository.delete(verificationToken);
+
+        log.info("Email verified for user {}", user.getId());
+    }
 
 
     public UserResponse getCurrentUser(String userId) {
@@ -93,14 +142,13 @@ public class AuthService {
         return mapper.fromUserToUserResponse(user);
     }
 
+
     public Page<UserResponse> findAll(int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
         return repository.findAll(pageable).map(mapper::fromUserToUserResponse);
     }
 
-
-    public AuthResponse buildAuthResponse(User user){
-
+    public AuthResponse buildAuthResponse(User user) {
         return AuthResponse.builder()
                 .accessToken(jwtService.generateAccessToken(user))
                 .refreshToken(jwtService.generateRefreshToken(user))
@@ -108,5 +156,13 @@ public class AuthService {
                 .expiresIn(jwtService.getAccessExpiration())
                 .user(mapper.fromUserToUserResponse(user))
                 .build();
+    }
+
+    private String serialize(Object event) {
+        try {
+            return objectMapper.writeValueAsString(event);
+        } catch (Exception ex) {
+            throw new PaymentProcessingException("Failed to serialize event", ex);
+        }
     }
 }

@@ -4,8 +4,11 @@ import com.sorokaandriy.auth_service.dto.RegisterRequest;
 import com.sorokaandriy.auth_service.dto.UserResponse;
 import com.sorokaandriy.auth_service.entity.Role;
 import com.sorokaandriy.auth_service.entity.User;
+import com.sorokaandriy.auth_service.kafka.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
 
 @Component
 @RequiredArgsConstructor
@@ -31,7 +34,20 @@ public class UserMapper {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .role(user.getRole())
+                .emailVerified(user.getEmailVerified())
                 .createdAt(user.getCreatedAt())
+                .build();
+    }
+
+
+    public UserRegisteredEvent fromUserToUserRegisteredEvent(User user, String verificationToken){
+        return UserRegisteredEvent.builder()
+                .userId(String.valueOf(user.getId()))
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .verificationToken(verificationToken)
+                .registeredAt(Instant.now())
                 .build();
     }
 }
