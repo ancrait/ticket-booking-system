@@ -27,12 +27,17 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/auth/login",
             "/api/auth/refresh",
             "/api/auth/verify-email",
+            "/api/auth/resend-verification",
             "/api/payments/webhook"
     );
 
     private static final List<String> PUBLIC_GET_PREFIXES = List.of(
             "/api/events",
             "/api/venues"
+    );
+
+    private static final List<String> PROTECTED_GET_PREFIXES = List.of(
+            "/api/events/organizer"
     );
 
     private final JwtService jwtService;
@@ -85,8 +90,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return true;
         }
 
-        return HttpMethod.GET.equals(method)
-                && PUBLIC_GET_PREFIXES.stream().anyMatch(path::startsWith);
+        if (!HttpMethod.GET.equals(method)) {
+            return false;
+        }
+
+        if (PROTECTED_GET_PREFIXES.stream().anyMatch(path::startsWith)) {
+            return false;
+        }
+
+        return PUBLIC_GET_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
