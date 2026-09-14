@@ -1,4 +1,4 @@
-package com.sorokaandriy.booking_service.config;
+package com.sorokaandriy.notification_service.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
