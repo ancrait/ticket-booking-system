@@ -36,8 +36,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/payments/webhook").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/*/refund").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/payments/*/initiate").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/payments/*/status").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/api/payments/*/initiate").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/payments/*/status").hasAnyRole("USER", "ADMIN")
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(headerAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

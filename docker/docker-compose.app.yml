@@ -1,0 +1,183 @@
+services:
+  auth-service:
+    build:
+      context: ../backend/auth-service
+      dockerfile: ../../docker/auth.Dockerfile
+    container_name: tiq-auth-service
+    environment:
+      AUTH_DB_HOST: auth-db
+      AUTH_DB_PORT: 5432
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "8081:8081"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - tiq-network
+
+  event-service:
+    build:
+      context: ../backend/event-service
+      dockerfile: ../../docker/event.Dockerfile
+    container_name: tiq-event-service
+    environment:
+      EVENT_DB_HOST: event-db
+      EVENT_DB_PORT: 5432
+      EVENT_DB_NAME: ${EVENT_DB_NAME}
+      EVENT_DB_USER: ${EVENT_DB_USER}
+      EVENT_DB_PASSWORD: ${EVENT_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "8082:8082"
+    depends_on:
+      event-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - tiq-network
+
+  booking-service:
+    build:
+      context: ../backend/booking-service
+      dockerfile: ../../docker/booking.Dockerfile
+    container_name: tiq-booking-service
+    environment:
+      BOOKING_DB_HOST: booking-db
+      BOOKING_DB_PORT: 5432
+      BOOKING_DB_NAME: ${BOOKING_DB_NAME}
+      BOOKING_DB_USER: ${BOOKING_DB_USER}
+      BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SERVICE_EVENT_API_URL: http://event-service:8082/api/internal/events
+    ports:
+      - "8083:8083"
+    depends_on:
+      booking-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      event-service:
+        condition: service_started
+    networks:
+      - tiq-network
+
+  payment-service:
+    build:
+      context: ../backend/payment-service
+      dockerfile: ../../docker/payment.Dockerfile
+    container_name: tiq-payment-service
+    environment:
+      PAYMENT_DB_HOST: payment-db
+      PAYMENT_DB_PORT: 5432
+      PAYMENT_DB_NAME: ${PAYMENT_DB_NAME}
+      PAYMENT_DB_USER: ${PAYMENT_DB_USER}
+      PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BOOKING_SERVICE_URL: http://booking-service:8083
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_KEY: ${STRIPE_WEBHOOK_KEY}
+    ports:
+      - "8084:8084"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      booking-service:
+        condition: service_started
+    networks:
+      - tiq-network
+
+  notification-service:
+    build:
+      context: ../backend/notification-service
+      dockerfile: ../../docker/notification.Dockerfile
+    container_name: tiq-notification-service
+    environment:
+      NOTIFICATION_DB_HOST: notification-db
+      NOTIFICATION_DB_PORT: 5432
+      NOTIFICATION_DB_NAME: ${NOTIFICATION_DB_NAME}
+      NOTIFICATION_DB_USER: ${NOTIFICATION_DB_USER}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    ports:
+      - "8085:8085"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - tiq-network
+
+  api-gateway:
+    build:
+      context: ../backend/api-gateway
+      dockerfile: ../../docker/api-gateway.Dockerfile
+    container_name: tiq-api-gateway
+    environment:
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      EVENT_SERVICE_URL: http://event-service:8082
+      BOOKING_SERVICE_URL: http://booking-service:8083
+      PAYMENT_SERVICE_URL: http://payment-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8085
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-service:
+        condition: service_started
+      event-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    networks:
+      - tiq-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+    container_name: tiq-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - tiq-network
+
+networks:
+  tiq-network:
+    driver: bridge

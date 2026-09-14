@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler({InvalidVerificationTokenException.class, VerificationTokenExpiredException.class})
+    @ExceptionHandler({InvalidVerificationTokenException.class, VerificationTokenExpiredException.class, EmailAlreadyVerifiedException.class})
     public ResponseEntity<ErrorResponseDto> handleVerificationTokenExceptions(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 ErrorResponseDto.builder()

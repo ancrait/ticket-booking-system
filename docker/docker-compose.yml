@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  auth_db:
+  auth-db:
     image: postgres:16-alpine
     container_name: auth_db
     environment:
@@ -21,7 +19,7 @@ services:
     networks:
       - tiq-network
 
-  event_db:
+  event-db:
     image: postgres:16-alpine
     container_name: event_db
     environment:
@@ -41,7 +39,7 @@ services:
     networks:
       - tiq-network
 
-  booking_db:
+  booking-db:
     image: postgres:16-alpine
     container_name: booking_db
     environment:
@@ -61,7 +59,7 @@ services:
     networks:
       - tiq-network
 
-  payment_db:
+  payment-db:
     image: postgres:16-alpine
     container_name: payment_db
     environment:
@@ -81,7 +79,7 @@ services:
     networks:
       - tiq-network
 
-  notification_db:
+  notification-db:
     image: postgres:16-alpine
     container_name: notification_db
     environment:
@@ -128,15 +126,13 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     healthcheck:
-      test: [ "CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092" ]
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
       - tiq-network
-
-
 
 volumes:
   auth_db_data:

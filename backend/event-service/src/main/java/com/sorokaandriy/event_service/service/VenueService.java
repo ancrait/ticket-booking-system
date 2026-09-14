@@ -45,8 +45,12 @@ public class VenueService {
         return mapper.fromVenueToVenueResponse(venue);
     }
 
-    public Page<VenueResponse> findAllVenues(int page, int size, String sortBy) {
+    public Page<VenueResponse> findAllVenues(int page, int size, String sortBy, String city) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sortBy));
+        if (city != null && !city.isBlank()) {
+            return venueRepository.findByCityIgnoreCase(city, pageable)
+                    .map(venue -> mapper.fromVenueToVenueResponse(venue));
+        }
         return venueRepository.findAll(pageable).map(venue -> mapper.fromVenueToVenueResponse(venue));
     }
 

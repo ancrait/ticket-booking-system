@@ -21,9 +21,10 @@ public class PaymentController {
     @PostMapping("/{bookingId}/initiate")
     public ResponseEntity<PaymentInitiateResponse> initiatePayment(
             @PathVariable UUID bookingId,
-            @RequestHeader("X-User-Id") UUID userId
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader("X-User-Role") String role
     ) {
-        return ResponseEntity.ok(paymentService.initiatePayment(bookingId, userId));
+        return ResponseEntity.ok(paymentService.initiatePayment(bookingId, userId, role));
     }
 
     @GetMapping("/{bookingId}/status")

@@ -29,4 +29,17 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
             @Param("date") LocalDate date,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT e FROM Event e
+    JOIN e.hall h
+    JOIN h.venue v
+    WHERE e.status = :status
+      AND v.id = :venueId
+    """)
+    Page<Event> findPublishedEventsByVenueId(
+            @Param("status") EventStatus status,
+            @Param("venueId") UUID venueId,
+            Pageable pageable
+    );
 }

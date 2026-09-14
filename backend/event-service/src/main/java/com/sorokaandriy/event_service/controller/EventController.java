@@ -51,6 +51,16 @@ public class EventController {
                 .findPublishedEventByCityAndDate(city, date, page, size, sortBy));
     }
 
+    @GetMapping("/by-venue/{venueId}")
+    public ResponseEntity<Page<EventResponse>> findPublishedEventsByVenue(
+            @PathVariable UUID venueId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy
+    ){
+        return ResponseEntity.ok(service.findPublishedEventsByVenue(venueId, page, size, sortBy));
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<EventResponse> findEventById(

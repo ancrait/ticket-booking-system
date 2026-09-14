@@ -135,6 +135,36 @@ public class AuthService {
         log.info("Email verified for user {}", user.getId());
     }
 
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User with email " + email + " not found"));
+
+        if (Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new EmailAlreadyVerifiedException("Email is already verified");
+        }
+
+        tokenRepository.findByUserId(user.getId()).ifPresent(tokenRepository::delete);
+
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .token(token)
+                .userId(user.getId())
+                .expiresAt(Instant.now().plusMillis(verificationTokenExpiration))
+                .build();
+        tokenRepository.save(verificationToken);
+
+        UserRegisteredEvent registeredEvent = mapper.fromUserToUserRegisteredEvent(user, verificationToken.getToken());
+
+        outBoxRepository.save(OutBox.builder()
+                .aggregateId(String.valueOf(user.getId()))
+                .topic("user-registered-topic")
+                .payload(serialize(registeredEvent))
+                .build());
+
+        log.info("Verification email resent to user {}", user.getId());
+    }
+
 
     public UserResponse getCurrentUser(String userId) {
         User user = repository.findById(UUID.fromString(userId))
