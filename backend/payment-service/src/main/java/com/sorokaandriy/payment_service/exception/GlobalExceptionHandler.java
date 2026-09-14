@@ -32,13 +32,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PaymentProcessingException.class)
     public ResponseEntity<ErrorResponseDto> handlePaymentProcessingException(PaymentProcessingException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(), exception.getMessage()));
     }
 
     @ExceptionHandler(InvalidWebhookSignatureException.class)
     public ResponseEntity<ErrorResponseDto> handleInvalidWebhookSignatureException(InvalidWebhookSignatureException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponseDto(HttpStatus.BAD_REQUEST.value(), exception.getMessage()));
     }
 
