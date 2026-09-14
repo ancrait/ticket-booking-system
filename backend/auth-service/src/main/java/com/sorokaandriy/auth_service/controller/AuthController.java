@@ -48,6 +48,14 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerificationEmail(
+            @Valid @RequestBody ResendVerificationRequest request
+    ) {
+        service.resendVerificationEmail(request.email().toLowerCase());
+        return ResponseEntity.noContent().build();
+    }
+
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> currentUser(
