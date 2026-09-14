@@ -33,6 +33,7 @@ public class EventSeatService {
     private final EventSeatMapper mapper;
 
 
+    @Transactional(readOnly = true)
     public Page<EventSeatResponse> findAllEventSeats(int page, int size,
                                                      String sortBy, UUID eventId) {
 
@@ -43,8 +44,9 @@ public class EventSeatService {
     }
 
 
+    @Transactional(readOnly = true)
     public Page<EventSeatResponse> findAvailableEventSeats(int page, int size,
-                                                                     String sortBy, UUID eventId) {
+                                                                      String sortBy, UUID eventId) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sortBy));
 
@@ -61,7 +63,7 @@ public class EventSeatService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException("Event with id " + eventId + " not found"));
 
-        List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndSeatIdInAndStatus
+        List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndIdInAndStatus
                 (eventId, request.seatIds(), EventSeatStatus.FREE);
 
         if (eventSeats.size() != request.seatIds().size()){
@@ -83,14 +85,19 @@ public class EventSeatService {
     @Transactional
     public void releaseSeats(UUID eventId, ReleaseSeatsRequest request) {
 
-        List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndSeatIdInAndStatus
-                (eventId, request.seatIds(), EventSeatStatus.HELD);
+        List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndIdIn(eventId, request.seatIds());
 
         if (eventSeats.size() != request.seatIds().size()) {
-            throw new SeatsNotAvailableException("Some seats are not in HELD status");
+            throw new SeatsNotAvailableException("Some seats not found");
         }
 
-        eventSeats.forEach(seat -> seat.setStatus(EventSeatStatus.FREE));
+        for (EventSeat seat : eventSeats) {
+            if (seat.getStatus() == EventSeatStatus.HELD) {
+                seat.setStatus(EventSeatStatus.FREE);
+            } else if (seat.getStatus() == EventSeatStatus.SOLD) {
+                throw new SeatsNotAvailableException("Some seats are already sold");
+            }
+        }
 
     }
 
@@ -98,7 +105,7 @@ public class EventSeatService {
     @Transactional
     public void confirmSeats(UUID eventId, ConfirmSeatsRequest request) {
 
-        List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndSeatIdInAndStatus
+        List<EventSeat> eventSeats = eventSeatRepository.findAllByEventIdAndIdInAndStatus
                 (eventId, request.seatIds(), EventSeatStatus.HELD);
 
         if (eventSeats.size() != request.seatIds().size()) {

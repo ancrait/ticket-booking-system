@@ -16,8 +16,8 @@ public interface EventSeatRepository extends JpaRepository<EventSeat, UUID> {
 
     boolean existsByEventId(UUID eventId);
 
-    List<EventSeat> findAllByEventIdAndSeatIdInAndStatus(
+    List<EventSeat> findAllByEventIdAndIdInAndStatus(
             UUID eventId, List<UUID> seatIds, EventSeatStatus status);
 
-    List<EventSeat> findAllByEventIdAndSeatIdIn(UUID eventId, List<UUID> seatIds);
+    List<EventSeat> findAllByEventIdAndIdIn(UUID eventId, List<UUID> seatIds);
 }

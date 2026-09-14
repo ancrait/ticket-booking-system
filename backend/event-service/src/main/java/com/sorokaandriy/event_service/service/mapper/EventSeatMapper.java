@@ -16,6 +16,7 @@ public class EventSeatMapper {
                 .rowNumber(eventSeat.getSeat().getRowNumber())
                 .seatNumber(eventSeat.getSeat().getSeatNumber())
                 .sector(eventSeat.getSeat().getSector())
+                .price(eventSeat.getPrice())
                 .status(eventSeat.getStatus())
                 .build();
     }

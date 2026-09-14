@@ -32,9 +32,10 @@ public class VenueController {
     public ResponseEntity<Page<VenueResponse>> findAllVenue(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(required = false) String city
     ){
-        return ResponseEntity.ok(service.findAllVenues(page, size, sortBy));
+        return ResponseEntity.ok(service.findAllVenues(page, size, sortBy, city));
     }
 
 
