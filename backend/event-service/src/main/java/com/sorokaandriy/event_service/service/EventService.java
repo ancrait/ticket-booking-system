@@ -185,4 +185,10 @@ public class EventService {
                 .map(event -> eventMapper.fromEventToEventResponse(event));
 
     }
+
+    public Page<EventResponse> findPublishedEventsByVenue(UUID venueId, int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, sortBy));
+        return eventRepository.findPublishedEventsByVenueId(EventStatus.PUBLISHED, venueId, pageable)
+                .map(event -> eventMapper.fromEventToEventResponse(event));
+    }
 }

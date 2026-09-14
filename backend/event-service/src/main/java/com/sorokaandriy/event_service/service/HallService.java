@@ -56,6 +56,7 @@ public class HallService {
 
     }
 
+    @Transactional(readOnly = true)
     public List<HallResponse> findHallsByVenueId(UUID venuId) {
 
         Venue venue = venueRepository.findById(venuId)
