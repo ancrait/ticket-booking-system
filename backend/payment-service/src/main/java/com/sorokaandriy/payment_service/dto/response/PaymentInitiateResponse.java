@@ -10,6 +10,7 @@ public record PaymentInitiateResponse(
         UUID paymentId,
         String clientSecret,
         BigDecimal amount,
-        String currency
+        String currency,
+        boolean alreadyPaid
 ) {
 }

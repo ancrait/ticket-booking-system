@@ -12,7 +12,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     boolean existsPaymentByBookingIdAndStatus(UUID bookingId, PaymentStatus status);
 
-    Optional<Payment> getPaymentByBookingId(UUID bookingId);
+    Optional<Payment> findFirstByBookingIdOrderByCreatedAtDesc(UUID bookingId);
 
     Optional<Payment> findByProviderPaymentId(String id);
 }
