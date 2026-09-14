@@ -58,6 +58,7 @@ public class BookingService {
         try {
             heldSeatsResponse = client.holdSeat(request.eventId(), new HeldSeatRequest(seatsId));
         } catch (Exception ex) {
+            log.error("Failed to hold seats for event {}: {}", request.eventId(), ex.getMessage(), ex);
             throw new SeatHoldException("Unable to hold selected seats", ex);
         }
 
@@ -216,24 +217,27 @@ public class BookingService {
     @Transactional
     public void expireBooking(Booking booking) {
 
-        if (booking.getStatus()!=BookingStatus.PENDING){
+        Booking managedBooking = bookingRepository.findById(booking.getId())
+                .orElseThrow(() -> new BookingNotFoundException("Booking with id " + booking.getId() + " not found"));
+
+        if (managedBooking.getStatus() != BookingStatus.PENDING){
             return;
         }
 
-        List<UUID> seatsId = booking.getBookingItems()
+        List<UUID> seatsId = managedBooking.getBookingItems()
                 .stream().map(bookingItem -> bookingItem.getEventSeatId()).toList();
 
-        client.releaseSeats(booking.getEventId(), new ReleaseSeatsRequest(seatsId));
+        client.releaseSeats(managedBooking.getEventId(), new ReleaseSeatsRequest(seatsId));
 
-        booking.setStatus(BookingStatus.EXPIRED);
-        booking.setUpdatedAt(Instant.now());
+        managedBooking.setStatus(BookingStatus.EXPIRED);
+        managedBooking.setUpdatedAt(Instant.now());
 
 
-        BookingExpiredEvent expiredEvent = mapper.fromBookingToBookingExpiredEvent(booking);
+        BookingExpiredEvent expiredEvent = mapper.fromBookingToBookingExpiredEvent(managedBooking);
 
 
         outBoxRepository.save(OutBox.builder()
-                .aggregateId(booking.getId().toString())
+                .aggregateId(managedBooking.getId().toString())
                 .topic("booking-expired")
                 .payload(serialize(expiredEvent))
                 .build());
